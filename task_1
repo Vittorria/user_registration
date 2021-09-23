@@ -1,0 +1,30 @@
+Consider our application a social platform. Users can join the platform by filling registration form with the following fields:
+username (unique, required)
+full name (required)
+email (unique, required)
+password (required)
+inviter (optional)
+
+Users can receive bonuses by inviting other users to join the platform. The invited user can enter its inviter’s username, and the platform will reward the inviter.
+
+Users can have one of the following roles
+USER
+PARTNER
+
+Each account has a balance, which is set to 0 on registration. Whenever a USER invites another user it receives 10 units to its balance. PARTNER’s receive 50 units for each invitation. The application should keep a history of each transaction.
+
+Endpoints:
+
+POST /register - registers a new user
+
+GET /user/:userId - returns details about user
+
+GET /history/:userId - returns the balance history of a given user
+response example :
+{
+	payload: [{
+		amount: <amount received for referring a new user>,
+		userId: <invited user’s ID>,
+		nickname: <invited user’s nickname>
+	}, … ]
+}

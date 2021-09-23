@@ -1,0 +1,65 @@
+-- FUNCTION: public2.f_add_new_user(character varying, character varying, character varying, character varying, integer)
+
+-- DROP FUNCTION public2.f_add_new_user(character varying, character varying, character varying, character varying, integer);
+
+CREATE OR REPLACE FUNCTION public2.f_add_new_user(
+	username character varying,
+	fullname character varying,
+	email character varying,
+	psw character varying,
+	inviterid integer)
+    RETURNS text
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE
+
+AS $BODY$
+DECLARE
+new_userId integer;
+reloid integer;
+message text;
+begin
+	message	:= 'FAILED';
+
+	IF COALESCE(username, '') = '' THEN
+		message	:= 'Data is empty';
+		RETURN message;
+	END IF;
+
+		WITH t1 AS (SELECT MAX("userid") cid
+				FROM public2.all_users)
+		INSERT INTO public2.all_users (userId, roleid, username, fullname, email, psw, balance)
+		SELECT (t1.cid + 1), 1, username, fullname, email, psw, 0
+			FROM t1;
+
+		WITH t1 AS (SELECT MAX("userid") cid
+				FROM public2.all_users)
+		INSERT INTO public2.history_users (userId, username, amount)
+		SELECT (t1.cid),  username, 0
+			FROM t1;
+
+		IF (inviterId > 0) THEN
+			IF ((SELECT roleId FROM public.all_users WHERE userId = inviterId) = 2 ) THEN
+				UPDATE public2.all_users SET balance = balance + 50 WHERE userid = inviterId;
+			ELSE
+				UPDATE public2.all_users SET balance = balance + 10 WHERE userid = inviterId;
+			END IF;
+
+			WITH t1 AS (SELECT * FROM public.all_users WHERE userId = inviterId)
+			INSERT INTO public2.history_users (userid, username, amount)
+			SELECT inviterId, t1.username, t1.balance
+			FROM t1;
+
+
+		END IF;
+		message := 'Added';
+		Return message;
+
+END
+
+$BODY$;
+
+ALTER FUNCTION public2.f_add_new_user(character varying, character varying, character varying, character varying, integer)
+    OWNER TO postgres;
+
